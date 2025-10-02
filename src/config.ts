@@ -1,6 +1,6 @@
 export const studentInfo = {
-  name: "Charlie Kirk",
-  number: "2602184220",
+  name: "Harman Singh Minhas",
+  number: "22586584",
   copyright: "© LaTrobe University"
 };
 

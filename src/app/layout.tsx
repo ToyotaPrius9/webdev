@@ -1,7 +1,8 @@
 import "./globals.css";
 import { ReactNode } from "react";
 import { Providers } from "./providers";
-import ThemeWrapper from "./theme-wrapper"; 
+import ThemeWrapper from "./theme-wrapper";
+import RoutePersistence from "@/components/RoutePersistence";
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         }}
       >
         <Providers>
-          <ThemeWrapper>{children}</ThemeWrapper>
+          <ThemeWrapper>
+            <RoutePersistence />
+            {children}
+          </ThemeWrapper>
         </Providers>
       </body>
     </html>

@@ -42,33 +42,39 @@ export default function TabsPage() {
 
   return (
     <div style={{ color: colors.text, backgroundColor: colors.background }}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-        <h2 className="text-2xl font-bold mb-6">Tabs</h2>
+      {/* Page Title */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-6">
+        <h2 className="text-2xl font-bold">Tabs</h2>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr] gap-6">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.6fr] gap-4 md:gap-6 lg:gap-8">
           {/* Tabs Headers */}
-          <div>
-            <h3 className="font-semibold mb-2">Tabs Headers: [+]</h3>
-            {tabHeaders.map((tab, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveTab(index)}
-                style={{
-                  width: "100%",
-                  marginBottom: "0.5rem",
-                  padding: "0.5rem",
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: "0.375rem",
-                  backgroundColor:
-                    activeTab === index ? colors.surfaceAlt : colors.surface,
-                  fontWeight: activeTab === index ? "bold" : "normal",
-                  textAlign: "left",
-                  color: colors.text,
-                }}
-              >
-                {tab}
-              </button>
-            ))}
+          <div className="flex flex-col items-center">
+            <h3 className="font-semibold mb-4">Tabs Headers: [+]</h3>
+            <div className="flex flex-col gap-3 w-full items-center">
+              {tabHeaders.map((tab, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTab(index)}
+                  style={{
+                    minWidth: "140px",
+                    padding: "0.75rem 1rem",
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: "0.5rem",
+                    backgroundColor:
+                      activeTab === index ? colors.surfaceAlt : colors.surface,
+                    fontWeight: activeTab === index ? "bold" : "normal",
+                    textAlign: "center",
+                    fontSize: "1rem",
+                    color: colors.text,
+                  }}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Tabs Content */}
@@ -78,7 +84,7 @@ export default function TabsPage() {
               style={{
                 padding: "1rem",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "0.375rem",
+                borderRadius: "0.5rem",
                 backgroundColor: colors.surface,
                 minHeight: "40vh",
                 whiteSpace: "pre-line",
@@ -98,9 +104,10 @@ export default function TabsPage() {
                 width: "100%",
                 minHeight: "40vh",
                 border: `1px solid ${colors.border}`,
-                borderRadius: "0.375rem",
-                padding: "0.5rem",
+                borderRadius: "0.5rem",
+                padding: "0.75rem",
                 fontFamily: "monospace",
+                fontSize: "0.9rem",
                 backgroundColor: colors.surface,
                 color: colors.text,
               }}
