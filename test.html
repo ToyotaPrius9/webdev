@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tabs Example</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
+    .tab button {
+      background-color: inherit; border: none; outline: none;
+      cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 16px;
+    }
+    .tab button:hover { background-color: #ddd; }
+    .tab button.active { background-color: #ccc; }
+    .tabcontent {
+      display: none; padding: 6px 12px;
+      border: 1px solid #ccc; border-top: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'tab0')">1. Setup</button>
+<button class="tablinks" onclick="openTab(event, 'tab1')">2. Terminal Commands</button>
+<button class="tablinks" onclick="openTab(event, 'tab2')">3. Index.html</button>
+<button class="tablinks" onclick="openTab(event, 'tab3')">4. HTTPS</button>
+<button class="tablinks" onclick="openTab(event, 'tab4')">5. Cookies</button>
+</div>
+
+
+<div id="tab0" class="tabcontent" style="display:block;">
+  <h3>Setup</h3>
+  <p>Make sure you have VSCode installed.</p>
+<ul>
+<li>Install Node.js</li>
+<li>Install Git</li>
+</ul>
+<br/>
+<ol>
+<li>Open VSCode</li>
+<li>Start coding</li>
+</ol>
+
+</div>
+
+<div id="tab1" class="tabcontent" style="">
+  <h3>Terminal Commands</h3>
+  <pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code>sudo dnf install httpd
+
+sudo systemctl enable --now httpd.service
+
+sudo systemctl status httpd
+
+sudo firewall-cmd --add-service=http --permanent
+sudo firewall-cmd --reload
+
+#At this step you should be able to go to your Domain name or IP address, e.g. http://127.0.0.1 to see Apache default page
+
+#create and open a file: /etc/httpd/conf/httpd.conf 
+
+Make sure the content looks like:
+Listen *:80
+
+&lt;VirtualHost *:80&gt;
+
+ServerName example.com
+ServerAlias www.example.com
+
+DocumentRoot /var/www/example.com/html/
+
+ErrorLog /var/log/httpd/example.com_error.log
+CustomLog /var/log/httpd/example.com_access.log combined
+
+&lt;/VirtualHost&gt;
+
+====================================
+
+sudo chown -R apache:apache /var/www/html
+sudo systemctl restart httpd</code></pre>
+</div>
+
+<div id="tab2" class="tabcontent" style="">
+  <h3>Index.html</h3>
+  <pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code>!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;title&gt;My First Page&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Welcome to Week 1 CSE3CWA/CSE5006&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li&gt;This subject is intense - lots of latest technologies&lt;/li&gt;
+    &lt;li&gt;Always complete the labs each week&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+
+<div id="tab3" class="tabcontent" style="">
+  <h3>HTTPS</h3>
+  <pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code>sudo dnf install mod_ssl
+sudo systemctl restart httpd
+
+#open /etc/httpd/conf/httpd.conf
+#Check the below:
+Listen *:443
+
+&lt;VirtualHost *:443&gt;
+
+ServerName example.com
+ServerAlias www.example.com
+
+SSLEngine on SSLCertificateFile /etc/pki/tls/private/certificate.crt
+SSLCertificateKeyFile /etc/pki/tls/private/private.key
+
+DocumentRoot /var/www/html/
+
+ErrorLog /var/log/httpd/example.com_error.log
+CustomLog /var/log/httpd/example.com_access.log combined
+
+&lt;/VirtualHost&gt;
+
+#To redirect host
+#Find and add these lines:
+#Where www.example.com replace with IP of your VM.
+&lt;VirtualHost *:80&gt;
+
+ServerName example.com
+ServerAlias www.example.com
+
+Redirect “/” “https://example.com/”
+
+&lt;/VirtualHost&gt;</code></pre>
+</div>
+
+<div id="tab4" class="tabcontent" style="">
+  <h3>Cookies</h3>
+  <pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code> &lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;style&gt;
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+	  position: sticky;
+    }
+
+    li {
+      float: left;
+    }
+
+    li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    li a:hover:not(.active) {
+      background-color: #04AA6D;
+    }
+
+    .section {
+     /* height: 600px; /* Increase height to make scrolling more noticeable */
+      margin-bottom: 20px;
+    }
+
+    /* Sample styling for the sections */
+    #CSE3CWA { background-color: lightcoral; }
+    #CSE5006 { background-color: lightblue; }
+    #CSE3ILA { background-color: lightgreen; }
+    #CSE5IBL { background-color: lightyellow; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body onload=&quot;checkCookie()&quot;&gt;
+&lt;div id=&quot;Home&quot;&gt;
+  &lt;h1&gt;Navigation, Sections, and Cookies&lt;/h1&gt;
+
+  &lt;nav&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE3CWA&quot;&gt;CSE3CWA&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE5006&quot;&gt;CSE5006&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE3ILA&quot;&gt;CSE3ILA&lt;/a&gt;&lt;/li&gt;
+      &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#CSE5IBL&quot;&gt;CSE5IBL&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+&lt;/div&gt;
+
+  &lt;div id=&quot;CSE3CWA&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE3CWA&lt;/h2&gt;
+    &lt;p&gt;Creating websites that scale to serve hundreds of millions of users with acceptable response times is challenging. The main focus of this subject is on cloud computing concepts and tools needed to make websites scalable. This subject assumes the fundamental web technologies have already been taught in the prerequisite subjects. The subject will cover topics in the cloud computing concept and technologies, such as cloud repository, virtualisation, the framework for frontend and backend development, API, web server storage, and the management of application development (CI/CD) This subject will also cover the fundamental of cloud computing platform and its features.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE5006&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE5006&lt;/h2&gt;
+    &lt;p&gt;Creating websites that scale to serve hundreds of millions of users with acceptable response times is challenging. The main focus of this subject is on cloud computing concepts and tools needed to make websites scalable. This subject assumes the fundamental web technologies have already been taught in the prerequisite subjects. The subject will cover topics in the cloud computing concept and technologies, such as cloud repository, virtualisation, the framework for frontend and backend development, API, web server storage, and the management of application development (CI/CD) This subject will also cover the fundamental of cloud computing platform and its features.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE3ILA&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE3ILA&lt;/h2&gt;
+    &lt;p&gt;You are to undertake a 12 x 20hr per week or equivalent industry based learning program. A member of the academic staff acting in the capacity of industry based learning coordinator liaises with the placement provider to formulate and structure a program of learning for each student. This program is normally project based, with day-to-day supervision by the placement provider. Progress is monitored at regular intervals.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE5IBL&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE5IBL&lt;/h2&gt;
+    &lt;p&gt;Students undertake a 12 x 20hr per week or equivalent industry based learning program. A member of the academic staff acting in the capacity of industry based learning coordinator liaises with the placement provider to formulate and structure a program of learning for each student. This program is normally project based, with day-to-day supervision by the placement provider. Progress is monitored at regular intervals.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    // Set a cookie
+    function setCookie(cname, cvalue, exdays) {
+      const d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      let expires = &quot;expires=&quot; + d.toUTCString();
+      document.cookie = cname + &quot;=&quot; + cvalue + &quot;;&quot; + expires + &quot;;path=/&quot;;
+    }
+
+    // Get a cookie value
+    function getCookie(cname) {
+      let name = cname + &quot;=&quot;;
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(&#039;;&#039;);
+      for (let i = 0; i &lt; ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == &#039; &#039;) {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return &quot;&quot;;
+    }
+
+    // Check the cookie to scroll to a saved section
+    function checkCookie() {
+      let userSection = getCookie(&quot;section&quot;);
+      if (userSection != &quot;&quot;) {
+        let sectionElement = document.querySelector(userSection);
+        if (sectionElement) {
+          sectionElement.scrollIntoView({ behavior: &#039;smooth&#039; });
+        }
+      } else {
+        setCookie(&quot;section&quot;, &quot;#Home&quot;, 30); /* Default to CSE3CWA */
+      }
+    }
+
+    // Check if an element is visible in the viewport
+    function isElementVisible(element) {
+      const elementTop = element.offsetTop;
+      const elementBottom = elementTop + element.offsetHeight;
+      const viewportTop = window.pageYOffset;
+      const viewportBottom = viewportTop + window.innerHeight;
+
+      return elementBottom &gt; viewportTop &amp;&amp; elementTop &lt; viewportBottom;
+    }
+
+    // This function will update the cookie every time the user scrolls
+    window.addEventListener(&#039;scroll&#039;, () =&gt; {
+      const sections = [&#039;Home&#039;, &#039;CSE3CWA&#039;, &#039;CSE5006&#039;, &#039;CSE3ILA&#039;, &#039;CSE5IBL&#039;];
+
+      // Check which section is visible and update the cookie
+      for (const sectionId of sections) {
+        const sectionElement = document.getElementById(sectionId);
+        if (isElementVisible(sectionElement)) {
+          console.log(`Element ${sectionId} is visible in viewport`);
+          setCookie(&quot;section&quot;, `#${sectionId}`, 30); // Update the cookie for the visible section
+          &lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;style&gt;
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #333;
+	  position: sticky;
+    }
+
+    li {
+      float: left;
+    }
+
+    li a {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    li a:hover:not(.active) {
+      background-color: #04AA6D;
+    }
+
+    .section {
+     /* height: 600px; /* Increase height to make scrolling more noticeable */
+      margin-bottom: 20px;
+    }
+
+    /* Sample styling for the sections */
+    #CSE3CWA { background-color: lightcoral; }
+    #CSE5006 { background-color: lightblue; }
+    #CSE3ILA { background-color: lightgreen; }
+    #CSE5IBL { background-color: lightyellow; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body onload=&quot;checkCookie()&quot;&gt;
+&lt;div id=&quot;Home&quot;&gt;
+  &lt;h1&gt;Navigation, Sections, and Cookies&lt;/h1&gt;
+
+  &lt;nav&gt;
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE3CWA&quot;&gt;CSE3CWA&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE5006&quot;&gt;CSE5006&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#CSE3ILA&quot;&gt;CSE3ILA&lt;/a&gt;&lt;/li&gt;
+      &lt;li style=&quot;float:right&quot;&gt;&lt;a href=&quot;#CSE5IBL&quot;&gt;CSE5IBL&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+&lt;/div&gt;
+
+  &lt;div id=&quot;CSE3CWA&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE3CWA&lt;/h2&gt;
+    &lt;p&gt;Creating websites that scale to serve hundreds of millions of users with acceptable response times is challenging. The main focus of this subject is on cloud computing concepts and tools needed to make websites scalable. This subject assumes the fundamental web technologies have already been taught in the prerequisite subjects. The subject will cover topics in the cloud computing concept and technologies, such as cloud repository, virtualisation, the framework for frontend and backend development, API, web server storage, and the management of application development (CI/CD) This subject will also cover the fundamental of cloud computing platform and its features.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE5006&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE5006&lt;/h2&gt;
+    &lt;p&gt;Creating websites that scale to serve hundreds of millions of users with acceptable response times is challenging. The main focus of this subject is on cloud computing concepts and tools needed to make websites scalable. This subject assumes the fundamental web technologies have already been taught in the prerequisite subjects. The subject will cover topics in the cloud computing concept and technologies, such as cloud repository, virtualisation, the framework for frontend and backend development, API, web server storage, and the management of application development (CI/CD) This subject will also cover the fundamental of cloud computing platform and its features.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE3ILA&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE3ILA&lt;/h2&gt;
+    &lt;p&gt;You are to undertake a 12 x 20hr per week or equivalent industry based learning program. A member of the academic staff acting in the capacity of industry based learning coordinator liaises with the placement provider to formulate and structure a program of learning for each student. This program is normally project based, with day-to-day supervision by the placement provider. Progress is monitored at regular intervals.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+
+  &lt;/div&gt;
+
+  &lt;div id=&quot;CSE5IBL&quot; class=&quot;section&quot;&gt;
+    &lt;h2&gt;CSE5IBL&lt;/h2&gt;
+    &lt;p&gt;Students undertake a 12 x 20hr per week or equivalent industry based learning program. A member of the academic staff acting in the capacity of industry based learning coordinator liaises with the placement provider to formulate and structure a program of learning for each student. This program is normally project based, with day-to-day supervision by the placement provider. Progress is monitored at regular intervals.&lt;/p&gt;
+&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;
+
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    // Set a cookie
+    function setCookie(cname, cvalue, exdays) {
+      const d = new Date();
+      d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+      let expires = &quot;expires=&quot; + d.toUTCString();
+      document.cookie = cname + &quot;=&quot; + cvalue + &quot;;&quot; + expires + &quot;;path=/&quot;;
+    }
+
+    // Get a cookie value
+    function getCookie(cname) {
+      let name = cname + &quot;=&quot;;
+      let decodedCookie = decodeURIComponent(document.cookie);
+      let ca = decodedCookie.split(&#039;;&#039;);
+      for (let i = 0; i &lt; ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == &#039; &#039;) {
+          c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+          return c.substring(name.length, c.length);
+        }
+      }
+      return &quot;&quot;;
+    }
+
+    // Check the cookie to scroll to a saved section
+    function checkCookie() {
+      let userSection = getCookie(&quot;section&quot;);
+      if (userSection != &quot;&quot;) {
+        let sectionElement = document.querySelector(userSection);
+        if (sectionElement) {
+          sectionElement.scrollIntoView({ behavior: &#039;smooth&#039; });
+        }
+      } else {
+        setCookie(&quot;section&quot;, &quot;#Home&quot;, 30); /* Default to CSE3CWA */
+      }
+    }
+
+    // Check if an element is visible in the viewport
+    function isElementVisible(element) {
+      const elementTop = element.offsetTop;
+      const elementBottom = elementTop + element.offsetHeight;
+      const viewportTop = window.pageYOffset;
+      const viewportBottom = viewportTop + window.innerHeight;
+
+      return elementBottom &gt; viewportTop &amp;&amp; elementTop &lt; viewportBottom;
+    }
+
+    // This function will update the cookie every time the user scrolls
+    window.addEventListener(&#039;scroll&#039;, () =&gt; {
+      const sections = [&#039;Home&#039;, &#039;CSE3CWA&#039;, &#039;CSE5006&#039;, &#039;CSE3ILA&#039;, &#039;CSE5IBL&#039;];
+
+      // Check which section is visible and update the cookie
+      for (const sectionId of sections) {
+        const sectionElement = document.getElementById(sectionId);
+        if (isElementVisible(sectionElement)) {
+          console.log(`Element ${sectionId} is visible in viewport`);
+          setCookie(&quot;section&quot;, `#${sectionId}`, 30); // Update the cookie for the visible section
+          //break; // Stop after finding the first visible section
+        }
+      }
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+// Stop after finding the first visible section
+        }
+      }
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+
+<script>
+function openTab(evt, tabId) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabId).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { themeColors } from "@/config";
 
@@ -9,59 +9,82 @@ export default function TabsPage() {
   const isDark = theme === "dark";
   const colors = isDark ? themeColors.dark : themeColors.light;
 
-  // State for dynamic tabs
-  const [tabs, setTabs] = useState([
+  // Default tab
+  const defaultTabs = [
     {
-      title: "Step 1",
-      content: "Step 1: Install VSCode\nThis is your HTML + JS output.",
-      output: `<!DOCTYPE html>
-<html>
-  <head><title>Generated</title></head>
-  <body style="font-family: Arial;">
-    <h1>Step 1: Install VSCode</h1>
-    <p>This is your HTML + JS output.</p>
-  </body>
-</html>`,
+      title: "Setup",
+      content:
+        "Make sure you have VSCode installed.\n- Install Node.js\n- Install Git\n\n1. Open VSCode\n2. Start coding",
     },
-  ]);
+  ];
 
+  const [tabs, setTabs] = useState(defaultTabs);
   const [activeTab, setActiveTab] = useState(0);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [generatedOutput, setGeneratedOutput] = useState("");
+
+  // Load from localStorage on first mount
+  useEffect(() => {
+    const saved = localStorage.getItem("userTabs");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTabs(parsed);
+        }
+      } catch (err) {
+        console.error("Failed to parse saved tabs", err);
+      }
+    }
+  }, []);
+
+  // Save to localStorage + regenerate HTML when tabs change
+  useEffect(() => {
+    localStorage.setItem("userTabs", JSON.stringify(tabs));
+    const html = generateHTML(tabs);
+    setGeneratedOutput(html);
+  }, [tabs]);
 
   // Add new tab
   const addTab = () => {
-    if (tabs.length >= 15) return; // limit to 15
+    if (tabs.length >= 15) return;
     setTabs([
       ...tabs,
-      {
-        title: `Step ${tabs.length + 1}`,
-        content: "New tab content...",
-        output: "<!-- New tab output -->",
-      },
+      { title: `Step ${tabs.length}`, content: "New tab content..." },
     ]);
-    setActiveTab(tabs.length); // focus new tab
+    setActiveTab(tabs.length);
   };
 
-  // Remove last tab
+  // Remove currently selected tab (but not Setup tab at index 0)
   const removeTab = () => {
-    if (tabs.length <= 1) return; // keep at least 1 tab
-    const newTabs = tabs.slice(0, -1);
+    if (activeTab === 0 || tabs.length <= 1) return; // Prevent removing Setup
+
+    const newTabs = tabs.filter((_, i) => i !== activeTab);
     setTabs(newTabs);
-    setActiveTab(Math.min(activeTab, newTabs.length - 1));
+
+    // Adjust activeTab index
+    setActiveTab((prev) =>
+      prev > newTabs.length - 1 ? newTabs.length - 1 : prev
+    );
   };
 
-  // Update tab content
-  const updateTab = (index: number, field: "content" | "output", value: string) => {
+  // Update a tab
+  const updateTab = (
+    index: number,
+    field: "title" | "content",
+    value: string
+  ) => {
     const newTabs = [...tabs];
     newTabs[index][field] = value;
     setTabs(newTabs);
   };
 
-  // Copy output to clipboard with feedback
+  // Copy HTML output
   const copyOutput = () => {
-    navigator.clipboard.writeText(tabs[activeTab].output);
+    navigator.clipboard.writeText(generatedOutput);
     setCopied(true);
-    setTimeout(() => setCopied(false), 3000); // reset after 3s
+    setTimeout(() => setCopied(false), 3000);
   };
 
   return (
@@ -78,73 +101,57 @@ export default function TabsPage() {
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-semibold">Tabs Headers</h3>
-
-              {/* Remove Tab Button */}
               <button
                 onClick={removeTab}
-                disabled={tabs.length <= 1}
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "25%",
-                  border: `1px solid transparent`,
-                  backgroundColor: "transparent",
-                  cursor: tabs.length <= 1 ? "not-allowed" : "pointer",
-                  fontWeight: "bold",
-                  color: colors.text,
-                  lineHeight: "1",
-                  transition: "all 0.2s",
-                }}
-                className="hover:border hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                title="Remove Tab"
+                disabled={activeTab === 0 || tabs.length <= 1}
+                className="w-5 h-5 rounded border text-sm font-bold flex items-center justify-center 
+                  hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
               >
                 −
               </button>
-
-              {/* Add Tab Button */}
               <button
                 onClick={addTab}
                 disabled={tabs.length >= 15}
-                style={{
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "25%",
-                  border: `1px solid transparent`,
-                  backgroundColor: "transparent",
-                  cursor: tabs.length >= 15 ? "not-allowed" : "pointer",
-                  fontWeight: "bold",
-                  color: colors.text,
-                  lineHeight: "1",
-                  transition: "all 0.2s",
-                }}
-                className="hover:border hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                title="Add Tab"
+                className="w-5 h-5 rounded border text-sm font-bold flex items-center justify-center 
+                  hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
               >
                 +
               </button>
             </div>
 
             <div className="flex flex-col gap-3 w-full items-center">
-              {tabs.map((tab, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTab(index)}
-                  style={{
-                    minWidth: "140px",
-                    padding: "0.75rem 1rem",
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: "0.5rem",
-                    backgroundColor:
-                      activeTab === index ? colors.surfaceAlt : colors.surface,
-                    fontWeight: activeTab === index ? "bold" : "normal",
-                    textAlign: "center",
-                    fontSize: "1rem",
-                    color: colors.text,
-                  }}
-                >
-                  {tab.title}
-                </button>
-              ))}
+              {tabs.map((tab, index) =>
+                editingIndex === index ? (
+                  <input
+                    key={index}
+                    value={tab.title}
+                    autoFocus
+                    onChange={(e) => updateTab(index, "title", e.target.value)}
+                    onBlur={() => setEditingIndex(null)}
+                    onKeyDown={(e) => e.key === "Enter" && setEditingIndex(null)}
+                    className="px-4 py-2 rounded border text-center border-2 font-bold 
+                               w-full max-w-[280px]"
+                  />
+                ) : (
+                  <button
+                    key={index}
+                    onClick={() => setActiveTab(index)}
+                    onDoubleClick={() =>
+                      index !== 0 && setEditingIndex(index)
+                    }
+                    className={`px-4 py-2 rounded border text-center transition truncate 
+                                w-full max-w-[160px] sm:max-w-[240px] md:max-w-[160px]
+                                ${
+                                  activeTab === index
+                                    ? "font-bold border-2"
+                                    : "border hover:border-gray-400"
+                                }`}
+                    title={tab.title}
+                  >
+                    {tab.title}
+                  </button>
+                )
+              )}
             </div>
           </div>
 
@@ -153,10 +160,12 @@ export default function TabsPage() {
             <h3 className="font-semibold mb-2">Tabs Content</h3>
             <textarea
               value={tabs[activeTab].content}
-              onChange={(e) => updateTab(activeTab, "content", e.target.value)}
+              onChange={(e) =>
+                updateTab(activeTab, "content", e.target.value)
+              }
               style={{
                 width: "100%",
-                minHeight: "40vh",
+                minHeight: "43vh",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "0.5rem",
                 padding: "0.75rem",
@@ -172,10 +181,10 @@ export default function TabsPage() {
           {/* Output */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold">Output</h3>
+              <h3 className="font-semibold">Generated HTML Output</h3>
               <button
                 onClick={copyOutput}
-                className={`text-sm px-2 py-1 rounded border transition ${
+                className={`text-sm px-2 py-0.5 rounded border transition ${
                   isDark
                     ? "border-gray-500 bg-gray-800 text-gray-200 hover:bg-gray-700"
                     : "border-gray-400 bg-gray-100 text-gray-800 hover:bg-gray-200"
@@ -184,42 +193,168 @@ export default function TabsPage() {
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
-
-            <div
+            <textarea
+              value={generatedOutput}
+              readOnly
               style={{
                 width: "100%",
                 minHeight: "40vh",
                 border: `1px solid ${colors.border}`,
                 borderRadius: "0.5rem",
                 padding: "0.75rem",
-                backgroundColor: "#1e1e1e", // always dark editor bg
+                backgroundColor: "#1e1e1e",
                 color: "#d4d4d4",
-                fontFamily: "Menlo, Monaco, Consolas, 'Courier New', monospace",
+                fontFamily:
+                  "Menlo, Monaco, Consolas, 'Courier New', monospace",
                 fontSize: "0.9rem",
-                overflowY: "auto",
-                whiteSpace: "pre-wrap",
+                resize: "none",
               }}
-            >
-              <textarea
-                value={tabs[activeTab].output}
-                onChange={(e) => updateTab(activeTab, "output", e.target.value)}
-                style={{
-                  width: "100%",
-                  minHeight: "38vh",
-                  border: "none",
-                  outline: "none",
-                  resize: "none",
-                  backgroundColor: "transparent",
-                  color: "#d4d4d4",
-                  fontFamily:
-                    "Menlo, Monaco, Consolas, 'Courier New', monospace",
-                  fontSize: "0.9rem",
-                }}
-              />
-            </div>
+            />
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+/* Escape HTML so raw <tags> don't render */
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* Convert beginner text into HTML OR detect raw code */
+function parseContent(input: string): string {
+  const lines = input.split("\n");
+
+  // Detect if this looks like raw HTML/Code
+  const looksLikeCode = lines.some(
+    (line) => line.trim().startsWith("<") || line.trim().startsWith("!DOCTYPE")
+  );
+
+  if (looksLikeCode) {
+    // Render entire block as styled code editor
+    return `<pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code>${escapeHTML(input)}</code></pre>`;
+  }
+
+  // Otherwise, normal beginner-friendly parsing
+  let html = "";
+  let inUL = false;
+  let inOL = false;
+
+  const closeLists = () => {
+    if (inUL) {
+      html += "</ul>\n";
+      inUL = false;
+    }
+    if (inOL) {
+      html += "</ol>\n";
+      inOL = false;
+    }
+  };
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+      if (!inUL) {
+        closeLists();
+        html += "<ul>\n";
+        inUL = true;
+      }
+      html += `<li>${trimmed.replace(/^[-*]\s*/, "")}</li>\n`;
+    } else if (/^\d+\./.test(trimmed)) {
+      if (!inOL) {
+        closeLists();
+        html += "<ol>\n";
+        inOL = true;
+      }
+      html += `<li>${trimmed.replace(/^\d+\.\s*/, "")}</li>\n`;
+    } else if (trimmed === "") {
+      closeLists();
+      html += "<br/>\n";
+    } else {
+      closeLists();
+      html += `<p>${escapeHTML(trimmed)}</p>\n`;
+    }
+  });
+
+  closeLists();
+  return html;
+}
+
+/* Generate exportable HTML from current tabs */
+function generateHTML(tabs: { title: string; content: string }[]): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Tabs Example</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
+    .tab button {
+      background-color: inherit; border: none; outline: none;
+      cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 16px;
+    }
+    .tab button:hover { background-color: #ddd; }
+    .tab button.active { background-color: #ccc; }
+    .tabcontent {
+      display: none; padding: 6px 12px;
+      border: 1px solid #ccc; border-top: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tab">
+  ${tabs
+    .map(
+      (tab, i) =>
+        `<button class="tablinks" onclick="openTab(event, 'tab${i}')">${i + 1}. ${tab.title}</button>`
+    )
+    .join("\n")}
+</div>
+
+${tabs
+  .map(
+    (tab, i) => `
+<div id="tab${i}" class="tabcontent" style="${i === 0 ? "display:block;" : ""}">
+  <h3>${tab.title}</h3>
+  ${parseContent(tab.content)}
+</div>`
+  )
+  .join("\n")}
+
+<script>
+function openTab(evt, tabId) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabId).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
+
+</body>
+</html>`;
 }
