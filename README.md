@@ -7,7 +7,7 @@ This application includes front-end designs, interactive UI components, and them
 
 ## Overview
 
-So far, this web application provides a tabs page as the main feature, which allows users to generate clean HTML5 code with inline CSS, all with no use of external stylesheets or CSS classes.  
+So far, this web application provides a tabs page as the main feature, which allows users to generate clean HTML5 code with JS and inline CSS, all with no use of external stylesheets or CSS classes.  
 
 The design of the application was made with simplicity in mind, making it easier to implement client-side code generation from the browser.
 
@@ -17,7 +17,7 @@ The design of the application was made with simplicity in mind, making it easier
 
 ### Pages
 - **Home Page/Tabs Page**  
-  A dynamic code generator that outputs HTML5 code with the use of inline CSS.  
+  A dynamic code generator that outputs HTML5 code with the use of JS and inline CSS.  
   Built for students accessing the LTU LMS to experiment with tab layouts and see real-time results.
 
 - **About Page**  
