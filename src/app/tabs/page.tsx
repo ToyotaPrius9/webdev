@@ -1,103 +1,152 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
-import { themeColors } from "@/config";
+import { useState, useEffect, useRef } from "react"
+import { useTheme } from "next-themes"
+import { themeColors } from "@/config"
 
 export default function TabsPage() {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
-  const colors = isDark ? themeColors.dark : themeColors.light;
+  const { theme } = useTheme()
+  const isDark = theme === "dark"
+  const colors = isDark ? themeColors.dark : themeColors.light
 
-  // Default tab
+  // starting tabs (this is fallback if nothing in local storage)
   const defaultTabs = [
     {
       title: "Setup",
       content:
-        "Make sure you have VSCode installed.\n- Install Node.js\n- Install Git\n\n1. Open VSCode\n2. Start coding",
+        "make sure you have vscode installed.\n- install node.js\n- install git\n\n1. open vscode\n2. start coding",
     },
-  ];
+  ]
 
-  const [tabs, setTabs] = useState(defaultTabs);
-  const [activeTab, setActiveTab] = useState(0);
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [generatedOutput, setGeneratedOutput] = useState("");
+  const [tabs, setTabs] = useState(defaultTabs)
+  const [activeTab, setActiveTab] = useState(0)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [generatedOutput, setGeneratedOutput] = useState("")
+  const didLoad = useRef(false)
 
-  // Load from localStorage on first mount
+  // Load tabs + active tab from local storage one time
   useEffect(() => {
-    const saved = localStorage.getItem("userTabs");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
+    try {
+      const savedTabs = localStorage.getItem("userTabs")
+      const savedIndex = localStorage.getItem("activeTabIndex")
+
+      if (savedTabs) {
+        const parsed = JSON.parse(savedTabs)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setTabs(parsed);
+          setTabs(parsed)
         }
-      } catch (err) {
-        console.error("Failed to parse saved tabs", err);
+      }
+
+      if (savedIndex) {
+        const idx = parseInt(savedIndex)
+        if (!isNaN(idx) && idx >= 0) {
+          setActiveTab(idx)
+        }
+      }
+    } catch (err) {
+      console.error("could not load tabs", err)
+    } finally {
+      didLoad.current = true
+    }
+  }, [])
+
+  // Save tabs to local storage whenever they change (after first load)
+  useEffect(() => {
+    if (!didLoad.current) return
+    try {
+      localStorage.setItem("userTabs", JSON.stringify(tabs))
+      const html = generateHTML(tabs)
+      setGeneratedOutput(html)
+    } catch (err) {
+      console.error("could not save tabs", err)
+    }
+  }, [tabs])
+
+  // Save active tab index too
+  useEffect(() => {
+    if (!didLoad.current) return
+    try {
+      localStorage.setItem("activeTabIndex", String(activeTab))
+    } catch (err) {
+      console.error("could not save active tab", err)
+    }
+  }, [activeTab])
+
+  // Also save to localStorage on page unload as a safety measure
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (didLoad.current) {
+        localStorage.setItem("userTabs", JSON.stringify(tabs))
+        localStorage.setItem("activeTabIndex", String(activeTab))
       }
     }
-  }, []);
 
-  // Save to localStorage + regenerate HTML when tabs change
-  useEffect(() => {
-    localStorage.setItem("userTabs", JSON.stringify(tabs));
-    const html = generateHTML(tabs);
-    setGeneratedOutput(html);
-  }, [tabs]);
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [tabs, activeTab])
 
-  // Add new tab
+  // add a new tab
   const addTab = () => {
-    if (tabs.length >= 15) return;
-    setTabs([
+    if (tabs.length >= 15) return
+    const newTabs = [
       ...tabs,
-      { title: `Step ${tabs.length}`, content: "New tab content..." },
-    ]);
-    setActiveTab(tabs.length);
-  };
+      { title: `Step ${tabs.length + 1}`, content: "new tab content..." },
+    ]
+    setTabs(newTabs)
+    setActiveTab(newTabs.length - 1)
+  }
 
-  // Remove currently selected tab (but not Setup tab at index 0)
+  // remove tab (cant remove the first one)
   const removeTab = () => {
-    if (activeTab === 0 || tabs.length <= 1) return; // Prevent removing Setup
-
-    const newTabs = tabs.filter((_, i) => i !== activeTab);
-    setTabs(newTabs);
-
-    // Adjust activeTab index
+    if (activeTab === 0 || tabs.length <= 1) return
+    const newTabs = tabs.filter((_, i) => i !== activeTab)
+    setTabs(newTabs)
     setActiveTab((prev) =>
       prev > newTabs.length - 1 ? newTabs.length - 1 : prev
-    );
-  };
+    )
+  }
 
-  // Update a tab
+  // update title or content
   const updateTab = (
     index: number,
     field: "title" | "content",
     value: string
   ) => {
-    const newTabs = [...tabs];
-    newTabs[index][field] = value;
-    setTabs(newTabs);
-  };
+    const newTabs = [...tabs]
+    newTabs[index][field] = value
+    setTabs(newTabs)
+  }
 
-  // Copy HTML output
+  // copy generated html
   const copyOutput = () => {
-    navigator.clipboard.writeText(generatedOutput);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
-  };
+    navigator.clipboard.writeText(generatedOutput)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 3000)
+  }
+
+
 
   return (
     <div style={{ color: colors.text, backgroundColor: colors.background }}>
-      {/* Page Title */}
+      {/* page title */}
       <div className="px-4 sm:px-6 lg:px-8 pt-6">
         <h2 className="text-2xl font-bold">Tabs</h2>
+        <p className="text-sm text-gray-500 mt-1">
+          {tabs.length} tab(s) - Tabs are automatically saved
+        </p>
       </div>
 
-      {/* Main Content */}
+      {/* main layout */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex justify-end mb-4">
+
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.6fr] gap-4 md:gap-6 lg:gap-8">
-          {/* Tabs Headers */}
+          {/* left side: tab headers */}
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-semibold">Tabs Headers</h3>
@@ -155,7 +204,7 @@ export default function TabsPage() {
             </div>
           </div>
 
-          {/* Tabs Content */}
+          {/* middle: tab content */}
           <div>
             <h3 className="font-semibold mb-2">Tabs Content</h3>
             <textarea
@@ -178,10 +227,10 @@ export default function TabsPage() {
             />
           </div>
 
-          {/* Output */}
+          {/* right side: generated html */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold">Generated HTML Output</h3>
+              <h3 className="font-semibold">Output</h3>
               <button
                 onClick={copyOutput}
                 className={`text-sm px-2 py-0.5 rounded border transition ${
@@ -190,7 +239,7 @@ export default function TabsPage() {
                     : "border-gray-400 bg-gray-100 text-gray-800 hover:bg-gray-200"
                 }`}
               >
-                {copied ? "Copied!" : "Copy"}
+                {copied ? "copied!" : "copy"}
               </button>
             </div>
             <textarea
@@ -214,170 +263,83 @@ export default function TabsPage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-/* Escape HTML so raw <tags> don't render */
-function escapeHTML(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-/* Convert beginner text into HTML OR detect raw code */
+// turn text into html
 function parseContent(input: string): string {
-  const lines = input.split("\n");
-
-  // Detect if this looks like raw HTML/Code
-  const looksLikeCode = lines.some(
-    (line) => line.trim().startsWith("<") || line.trim().startsWith("!DOCTYPE")
-  );
-
-  if (looksLikeCode) {
-    // Render entire block as styled code editor
-    return `<pre style="
-      background: #f8f8f8;
-      color: #333;
-      padding: 1em;
-      border-radius: 6px;
-      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
-      font-size: 0.9rem;
-      overflow-x: auto;
-      border: 1px solid #ddd;
-    "><code>${escapeHTML(input)}</code></pre>`;
-  }
-
-  // Otherwise, normal beginner-friendly parsing
-  let html = "";
-  let inUL = false;
-  let inOL = false;
+  const lines = input.split("\n")
+  let html = ""
+  let inUL = false
+  let inOL = false
 
   const closeLists = () => {
     if (inUL) {
-      html += "</ul>\n";
-      inUL = false;
+      html += "</ul>\n"
+      inUL = false
     }
     if (inOL) {
-      html += "</ol>\n";
-      inOL = false;
+      html += "</ol>\n"
+      inOL = false
     }
-  };
+  }
 
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-
-    if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed.startsWith("<!DOCTYPE")) {
+      return input
+    } else if (trimmed.startsWith("- ")) {
       if (!inUL) {
-        closeLists();
-        html += "<ul>\n";
-        inUL = true;
+        closeLists()
+        html += "<ul>\n"
+        inUL = true
       }
-      html += `<li>${trimmed.replace(/^[-*]\s*/, "")}</li>\n`;
+      html += `<li>${trimmed.slice(2)}</li>\n`
     } else if (/^\d+\./.test(trimmed)) {
       if (!inOL) {
-        closeLists();
-        html += "<ol>\n";
-        inOL = true;
+        closeLists()
+        html += "<ol>\n"
+        inOL = true
       }
-      html += `<li>${trimmed.replace(/^\d+\.\s*/, "")}</li>\n`;
+      html += `<li>${trimmed.replace(/^\d+\.\s*/, "")}</li>\n`
     } else if (trimmed === "") {
-      closeLists();
-      html += "<br/>\n";
+      closeLists()
+      html += "<br/>\n"
+    } else if (trimmed.startsWith("#")) {
+      closeLists()
+      const level = trimmed.match(/^#+/)?.[0].length || 1
+      const text = trimmed.replace(/^#+\s*/, "")
+      html += `<h${level}>${text}</h${level}>\n`
     } else {
-      closeLists();
-      html += `<p>${escapeHTML(trimmed)}</p>\n`;
+      closeLists()
+      html += `<p>${trimmed}</p>\n`
     }
-  });
-
-  closeLists();
-  return html;
+  }
+  closeLists()
+  return html
 }
 
-/* html generate */
+// make a full html doc
 function generateHTML(tabs: { title: string; content: string }[]): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Tabs Example (Inline CSS)</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 20px;">
-
-  <!-- Tabs Header -->
-  <div style="
-    overflow: hidden;
-    border: 1px solid #ccc;
-    background-color: #f1f1f1;
-  ">
-    ${tabs
-      .map(
-        (tab, i) => `
-      <button 
-        onclick="openTab(event, 'tab${i}')"
-        style="
-          background-color: inherit;
-          border: none;
-          outline: none;
-          cursor: pointer;
-          padding: 14px 16px;
-          transition: background-color 0.3s;
-          font-size: 16px;
-          display: inline-block;
-        "
-        onmouseover="this.style.backgroundColor='#ddd'"
-        onmouseout="if(!this.classList.contains('active')) this.style.backgroundColor='inherit'"
-      >
-        ${i + 1}. ${tab.title}
-      </button>`
-      )
-      .join("\n")}
-  </div>
-
-  <!-- Tabs Content -->
-  ${tabs
+  const body = tabs
     .map(
-      (tab, i) => `
-  <div 
-    id="tab${i}"
-    style="
-      display: ${i === 0 ? "block" : "none"};
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      border-top: none;
-    "
-  >
-    <h3 style="margin-top: 0;">${tab.title}</h3>
+      (tab) => `
+  <section>
+    <h2>${tab.title}</h2>
     ${parseContent(tab.content)}
-  </div>`
+  </section>`
     )
-    .join("\n")}
+    .join("\n")
 
-  <script>
-    function openTab(evt, tabId) {
-      var i, tabcontent, buttons;
-      tabcontent = document.querySelectorAll('[id^="tab"]');
-      buttons = document.querySelectorAll('button');
-
-      // Hide all content
-      tabcontent.forEach(el => el.style.display = "none");
-
-      // Reset all buttons
-      buttons.forEach(b => {
-        b.classList.remove('active');
-        b.style.backgroundColor = "inherit";
-      });
-
-      // Show the selected tab
-      document.getElementById(tabId).style.display = "block";
-
-      // Highlight the selected button
-      evt.currentTarget.classList.add('active');
-      evt.currentTarget.style.backgroundColor = "#ccc";
-    }
-  </script>
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>generated page</title>
+</head>
+<body>
+${body}
 </body>
-</html>`;
+</html>`
 }
