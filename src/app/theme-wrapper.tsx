@@ -1,8 +1,9 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
 import { studentInfo, themeColors } from "@/config";
 
@@ -17,10 +18,55 @@ const aboutLink = { href: "/about", label: "About" };
 
 export default function ThemeWrapper({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
+  const pathname = usePathname();
   const isDark = theme === "dark";
   const colors = isDark ? themeColors.dark : themeColors.light;
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({
+    top: 0,
+    right: 0,
+  });
+
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  const toggleMenu = () => {
+    if (isMobile && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + window.scrollY,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setMenuOpen((prev) => !prev);
+  };
+
+  // Close menu on outside click (mobile only)
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen, isMobile]);
 
   return (
     <>
@@ -35,7 +81,9 @@ export default function ThemeWrapper({ children }: { children: ReactNode }) {
         <span style={{ fontWeight: "bold", color: colors.text }}>
           Student No: {studentInfo.number}
         </span>
-        <span style={{ fontSize: "1.125rem", fontWeight: 600, color: colors.text }}>
+        <span
+          style={{ fontSize: "1.125rem", fontWeight: 600, color: colors.text }}
+        >
           LTU Web App
         </span>
       </div>
@@ -54,8 +102,12 @@ export default function ThemeWrapper({ children }: { children: ReactNode }) {
             <Link
               key={link.href}
               href={link.href}
-              className="hover:underline"
-              style={{ color: colors.headerText, textDecoration: "none" }}
+              style={{
+                color: colors.headerText,
+                textDecoration: pathname === link.href ? "underline" : "none",
+                textDecorationThickness: "1px", // 👈 thinner underline
+                textUnderlineOffset: "3px", // 👈 move underline slightly down
+              }}
             >
               {link.label}
             </Link>
@@ -66,64 +118,104 @@ export default function ThemeWrapper({ children }: { children: ReactNode }) {
         <div className="hidden md:flex items-center gap-4">
           <ThemeToggle />
           <button
-            className="text-2xl"
+            ref={buttonRef}
+            className="text-2xl transition-transform"
             style={{
               background: "none",
               border: "none",
               color: colors.headerText,
             }}
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={toggleMenu}
           >
-            ☰
+            {menuOpen ? "✕" : "☰"}
           </button>
         </div>
 
         {/* Mobile Layout */}
         <div className="flex md:hidden justify-between w-full items-center">
-          {/* Theme toggle on the left */}
           <ThemeToggle />
-
-          {/* Kebab menu on the right */}
           <button
-            className="text-2xl"
+            ref={buttonRef}
+            className="text-2xl transition-transform"
             style={{
               background: "none",
               border: "none",
               color: colors.headerText,
             }}
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={toggleMenu}
           >
-            ☰
+            {menuOpen ? "✕" : "☰"}
           </button>
         </div>
       </header>
 
       {/* Popup Menu */}
-      {menuOpen && (
-        <div
-          className="flex flex-col space-y-2 px-4 py-3 md:absolute md:right-4 md:mt-2 md:w-40 md:rounded md:shadow-lg"
-          style={{
-            backgroundColor: colors.background,
-            border: `1px solid ${colors.border}`,
-            zIndex: 50,
-          }}
-        >
-          {/* Mobile → all links, Desktop → only About */}
-          {(window.innerWidth < 768 ? [...links, aboutLink] : [aboutLink]).map(
-            (link) => (
+      {menuOpen &&
+        (isMobile ? (
+          // Mobile absolute-position popup
+          <div
+            ref={menuRef}
+            className={`transform transition-all duration-200 ease-out ${
+              menuOpen
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-95 pointer-events-none"
+            } flex flex-col space-y-2 px-4 py-3 absolute rounded shadow-lg`}
+            style={{
+              top: menuPos.top,
+              right: menuPos.right,
+              backgroundColor: colors.background,
+              border: `1px solid ${colors.border}`,
+              zIndex: 50,
+            }}
+          >
+            {[...links, aboutLink].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="hover:underline"
-                style={{ color: colors.text }}
+                style={{
+                  color: colors.text,
+                  textDecoration: pathname === link.href ? "underline" : "none",
+                  textDecorationThickness: "1px", // 👈 thinner underline
+                  textUnderlineOffset: "3px",
+                }}
                 onClick={() => setMenuOpen(false)}
               >
                 {link.label}
               </Link>
-            )
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : (
+          // Desktop css transform dropdown
+          <div
+            ref={menuRef}
+            className={`absolute right-4 mt-2 w-40 flex flex-col space-y-2 px-4 py-3 rounded shadow-lg transform transition-all duration-200 ease-out ${
+              menuOpen
+                ? "opacity-100 scale-100 translate-y-0"
+                : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+            }`}
+            style={{
+              backgroundColor: colors.background,
+              border: `1px solid ${colors.border}`,
+              zIndex: 50,
+            }}
+          >
+            {[aboutLink].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                style={{
+                  color: colors.text,
+                  textDecoration: pathname === link.href ? "underline" : "none",
+                  textDecorationThickness: "1px", // 👈 thinner underline
+                  textUnderlineOffset: "3px",
+                }}
+                onClick={() => setMenuOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        ))}
 
       {/* Page Content */}
       <main

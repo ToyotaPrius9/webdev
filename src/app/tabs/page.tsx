@@ -296,65 +296,88 @@ function parseContent(input: string): string {
   return html;
 }
 
-/* Generate exportable HTML from current tabs */
+/* html generate */
 function generateHTML(tabs: { title: string; content: string }[]): string {
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Tabs Example</title>
-  <style>
-    body { font-family: Arial, sans-serif; }
-    .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; }
-    .tab button {
-      background-color: inherit; border: none; outline: none;
-      cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 16px;
-    }
-    .tab button:hover { background-color: #ddd; }
-    .tab button.active { background-color: #ccc; }
-    .tabcontent {
-      display: none; padding: 6px 12px;
-      border: 1px solid #ccc; border-top: none;
-    }
-  </style>
+  <title>Tabs Example (Inline CSS)</title>
 </head>
-<body>
+<body style="font-family: Arial, sans-serif; margin: 20px;">
 
-<div class="tab">
+  <!-- Tabs Header -->
+  <div style="
+    overflow: hidden;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+  ">
+    ${tabs
+      .map(
+        (tab, i) => `
+      <button 
+        onclick="openTab(event, 'tab${i}')"
+        style="
+          background-color: inherit;
+          border: none;
+          outline: none;
+          cursor: pointer;
+          padding: 14px 16px;
+          transition: background-color 0.3s;
+          font-size: 16px;
+          display: inline-block;
+        "
+        onmouseover="this.style.backgroundColor='#ddd'"
+        onmouseout="if(!this.classList.contains('active')) this.style.backgroundColor='inherit'"
+      >
+        ${i + 1}. ${tab.title}
+      </button>`
+      )
+      .join("\n")}
+  </div>
+
+  <!-- Tabs Content -->
   ${tabs
     .map(
-      (tab, i) =>
-        `<button class="tablinks" onclick="openTab(event, 'tab${i}')">${i + 1}. ${tab.title}</button>`
+      (tab, i) => `
+  <div 
+    id="tab${i}"
+    style="
+      display: ${i === 0 ? "block" : "none"};
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-top: none;
+    "
+  >
+    <h3 style="margin-top: 0;">${tab.title}</h3>
+    ${parseContent(tab.content)}
+  </div>`
     )
     .join("\n")}
-</div>
 
-${tabs
-  .map(
-    (tab, i) => `
-<div id="tab${i}" class="tabcontent" style="${i === 0 ? "display:block;" : ""}">
-  <h3>${tab.title}</h3>
-  ${parseContent(tab.content)}
-</div>`
-  )
-  .join("\n")}
+  <script>
+    function openTab(evt, tabId) {
+      var i, tabcontent, buttons;
+      tabcontent = document.querySelectorAll('[id^="tab"]');
+      buttons = document.querySelectorAll('button');
 
-<script>
-function openTab(evt, tabId) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabId).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-</script>
+      // Hide all content
+      tabcontent.forEach(el => el.style.display = "none");
 
+      // Reset all buttons
+      buttons.forEach(b => {
+        b.classList.remove('active');
+        b.style.backgroundColor = "inherit";
+      });
+
+      // Show the selected tab
+      document.getElementById(tabId).style.display = "block";
+
+      // Highlight the selected button
+      evt.currentTarget.classList.add('active');
+      evt.currentTarget.style.backgroundColor = "#ccc";
+    }
+  </script>
 </body>
 </html>`;
 }
