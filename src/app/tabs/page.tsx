@@ -4,12 +4,41 @@ import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
 import { themeColors } from "@/config"
 
+// helper to load tabs
+function loadTabsFromStorage() {
+  if (typeof window === "undefined") return null
+  try {
+    const savedTabs = localStorage.getItem("userTabs")
+    if (savedTabs) {
+      const parsed = JSON.parse(savedTabs)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch (err) {
+    console.error("could not load tabs", err)
+  }
+  return null
+}
+
+// helper to load which tab was active
+function loadActiveTabFromStorage() {
+  if (typeof window === "undefined") return 0
+  try {
+    const savedIndex = localStorage.getItem("activeTabIndex")
+    if (savedIndex) {
+      const idx = parseInt(savedIndex)
+      if (!isNaN(idx) && idx >= 0) return idx
+    }
+  } catch (err) {
+    console.error("could not load active tab", err)
+  }
+  return 0
+}
+
 export default function TabsPage() {
   const { theme } = useTheme()
   const isDark = theme === "dark"
   const colors = isDark ? themeColors.dark : themeColors.light
 
-  // starting tabs (this is fallback if nothing in local storage)
   const defaultTabs = [
     {
       title: "Setup",
@@ -18,54 +47,30 @@ export default function TabsPage() {
     },
   ]
 
-  const [tabs, setTabs] = useState(defaultTabs)
-  const [activeTab, setActiveTab] = useState(0)
+  const [tabs, setTabs] = useState(() => loadTabsFromStorage() || defaultTabs)
+  const [activeTab, setActiveTab] = useState(() => loadActiveTabFromStorage())
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
   const [generatedOutput, setGeneratedOutput] = useState("")
   const didLoad = useRef(false)
 
-  // Load tabs + active tab from local storage one time
+  // update generated html when tabs change
   useEffect(() => {
-    try {
-      const savedTabs = localStorage.getItem("userTabs")
-      const savedIndex = localStorage.getItem("activeTabIndex")
+    const html = generateHTML(tabs)
+    setGeneratedOutput(html)
+  }, [tabs])
 
-      if (savedTabs) {
-        const parsed = JSON.parse(savedTabs)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setTabs(parsed)
-        }
-      }
-
-      if (savedIndex) {
-        const idx = parseInt(savedIndex)
-        if (!isNaN(idx) && idx >= 0) {
-          setActiveTab(idx)
-        }
-      }
-    } catch (err) {
-      console.error("could not load tabs", err)
-    } finally {
-      didLoad.current = true
-    }
-  }, [])
-
-  // Save tabs to local storage whenever they change (after first load)
+  // save tabs when changed
   useEffect(() => {
-    if (!didLoad.current) return
     try {
       localStorage.setItem("userTabs", JSON.stringify(tabs))
-      const html = generateHTML(tabs)
-      setGeneratedOutput(html)
     } catch (err) {
       console.error("could not save tabs", err)
     }
   }, [tabs])
 
-  // Save active tab index too
+  // save active tab too
   useEffect(() => {
-    if (!didLoad.current) return
     try {
       localStorage.setItem("activeTabIndex", String(activeTab))
     } catch (err) {
@@ -73,22 +78,17 @@ export default function TabsPage() {
     }
   }, [activeTab])
 
-  // Also save to localStorage on page unload as a safety measure
+  // save again before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (didLoad.current) {
-        localStorage.setItem("userTabs", JSON.stringify(tabs))
-        localStorage.setItem("activeTabIndex", String(activeTab))
-      }
+      localStorage.setItem("userTabs", JSON.stringify(tabs))
+      localStorage.setItem("activeTabIndex", String(activeTab))
     }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [tabs, activeTab])
 
-  // add a new tab
+  // add tab
   const addTab = () => {
     if (tabs.length >= 15) return
     const newTabs = [
@@ -99,7 +99,7 @@ export default function TabsPage() {
     setActiveTab(newTabs.length - 1)
   }
 
-  // remove tab (cant remove the first one)
+  // remove tab
   const removeTab = () => {
     if (activeTab === 0 || tabs.length <= 1) return
     const newTabs = tabs.filter((_, i) => i !== activeTab)
@@ -109,7 +109,7 @@ export default function TabsPage() {
     )
   }
 
-  // update title or content
+  // update tab title or content
   const updateTab = (
     index: number,
     field: "title" | "content",
@@ -120,33 +120,25 @@ export default function TabsPage() {
     setTabs(newTabs)
   }
 
-  // copy generated html
+  // copy html
   const copyOutput = () => {
     navigator.clipboard.writeText(generatedOutput)
     setCopied(true)
     setTimeout(() => setCopied(false), 3000)
   }
 
-
-
   return (
     <div style={{ color: colors.text, backgroundColor: colors.background }}>
-      {/* page title */}
-      <div className="px-4 sm:px-6 lg:px-8 pt-6">
-        <h2 className="text-2xl font-bold">Tabs</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          {tabs.length} tab(s) - Tabs are automatically saved
-        </p>
+      {/* title */}
+      <div className="px-4 sm:px-6 lg:px-2 pt-3">
+        <h2 className="text-3xl font-bold">Tabs</h2>
+        <p className="text-sm text-gray-500 mt-1">{tabs.length} tab(s)</p>
       </div>
 
-      {/* main layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex justify-end mb-4">
-
-        </div>
-
+      {/* layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-5 py-4">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr_1.6fr] gap-4 md:gap-6 lg:gap-8">
-          {/* left side: tab headers */}
+          {/* headers */}
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 mb-4">
               <h3 className="font-semibold">Tabs Headers</h3>
@@ -178,23 +170,18 @@ export default function TabsPage() {
                     onChange={(e) => updateTab(index, "title", e.target.value)}
                     onBlur={() => setEditingIndex(null)}
                     onKeyDown={(e) => e.key === "Enter" && setEditingIndex(null)}
-                    className="px-4 py-2 rounded border text-center border-2 font-bold 
-                               w-full max-w-[280px]"
+                    className="px-4 py-2 rounded border text-center border-2 font-bold w-full max-w-[280px]"
                   />
                 ) : (
                   <button
                     key={index}
                     onClick={() => setActiveTab(index)}
-                    onDoubleClick={() =>
-                      index !== 0 && setEditingIndex(index)
-                    }
-                    className={`px-4 py-2 rounded border text-center transition truncate 
-                                w-full max-w-[160px] sm:max-w-[240px] md:max-w-[160px]
-                                ${
-                                  activeTab === index
-                                    ? "font-bold border-2"
-                                    : "border hover:border-gray-400"
-                                }`}
+                    onDoubleClick={() => index !== 0 && setEditingIndex(index)}
+                    className={`px-4 py-2 rounded border text-center transition truncate w-full max-w-[160px] sm:max-w-[240px] md:max-w-[160px] ${
+                      activeTab === index
+                        ? "font-bold border-2"
+                        : "border hover:border-gray-400"
+                    }`}
                     title={tab.title}
                   >
                     {tab.title}
@@ -204,14 +191,12 @@ export default function TabsPage() {
             </div>
           </div>
 
-          {/* middle: tab content */}
+          {/* content */}
           <div>
             <h3 className="font-semibold mb-2">Tabs Content</h3>
             <textarea
               value={tabs[activeTab].content}
-              onChange={(e) =>
-                updateTab(activeTab, "content", e.target.value)
-              }
+              onChange={(e) => updateTab(activeTab, "content", e.target.value)}
               style={{
                 width: "100%",
                 minHeight: "43vh",
@@ -227,10 +212,10 @@ export default function TabsPage() {
             />
           </div>
 
-          {/* right side: generated html */}
+          {/* output */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold">Output</h3>
+              <h3 className="font-semibold">Generated HTML Output</h3>
               <button
                 onClick={copyOutput}
                 className={`text-sm px-2 py-0.5 rounded border transition ${
@@ -239,7 +224,7 @@ export default function TabsPage() {
                     : "border-gray-400 bg-gray-100 text-gray-800 hover:bg-gray-200"
                 }`}
               >
-                {copied ? "copied!" : "copy"}
+                {copied ? "Copied!" : "Copy"}
               </button>
             </div>
             <textarea
@@ -266,9 +251,37 @@ export default function TabsPage() {
   )
 }
 
-// turn text into html
+/* Escape HTML so raw <tags> don't render */
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+/* Convert beginner text into HTML OR detect raw code */
 function parseContent(input: string): string {
   const lines = input.split("\n")
+  const looksLikeCode = lines.some(
+    (line) =>
+      line.trim().startsWith("<") || line.trim().startsWith("!DOCTYPE")
+  )
+
+  if (looksLikeCode) {
+    return `<pre style="
+      background: #f8f8f8;
+      color: #333;
+      padding: 1em;
+      border-radius: 6px;
+      font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    "><code>${escapeHTML(input)}</code></pre>`
+  }
+
   let html = ""
   let inUL = false
   let inOL = false
@@ -284,17 +297,15 @@ function parseContent(input: string): string {
     }
   }
 
-  for (const line of lines) {
+  lines.forEach((line) => {
     const trimmed = line.trim()
-    if (trimmed.startsWith("<!DOCTYPE")) {
-      return input
-    } else if (trimmed.startsWith("- ")) {
+    if (trimmed.startsWith("-") || trimmed.startsWith("*")) {
       if (!inUL) {
         closeLists()
         html += "<ul>\n"
         inUL = true
       }
-      html += `<li>${trimmed.slice(2)}</li>\n`
+      html += `<li>${trimmed.replace(/^[-*]\s*/, "")}</li>\n`
     } else if (/^\d+\./.test(trimmed)) {
       if (!inOL) {
         closeLists()
@@ -305,41 +316,84 @@ function parseContent(input: string): string {
     } else if (trimmed === "") {
       closeLists()
       html += "<br/>\n"
-    } else if (trimmed.startsWith("#")) {
-      closeLists()
-      const level = trimmed.match(/^#+/)?.[0].length || 1
-      const text = trimmed.replace(/^#+\s*/, "")
-      html += `<h${level}>${text}</h${level}>\n`
     } else {
       closeLists()
-      html += `<p>${trimmed}</p>\n`
+      html += `<p>${escapeHTML(trimmed)}</p>\n`
     }
-  }
+  })
+
   closeLists()
   return html
 }
 
-// make a full html doc
+/* Full HTML generator with tabs & interactivity */
 function generateHTML(tabs: { title: string; content: string }[]): string {
-  const body = tabs
-    .map(
-      (tab) => `
-  <section>
-    <h2>${tab.title}</h2>
-    ${parseContent(tab.content)}
-  </section>`
-    )
-    .join("\n")
-
   return `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>generated page</title>
+<meta charset="UTF-8">
+<title>Hello</title>
 </head>
-<body>
-${body}
+<body style="font-family: Arial, sans-serif; margin: 20px;">
+
+<!-- Tabs Header -->
+<div style="
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+">
+${tabs
+  .map(
+    (tab, i) => `
+<button onclick="openTab(event, 'tab${i}')" style="
+  background-color: inherit;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: background-color 0.3s;
+  font-size: 16px;
+  display: inline-block;
+" onmouseover="this.style.backgroundColor='#ddd'"
+onmouseout="if(!this.classList.contains('active')) this.style.backgroundColor='inherit'">
+${i + 1}. ${tab.title}
+</button>`
+  )
+  .join("\n")}
+</div>
+
+<!-- Tabs Content -->
+${tabs
+  .map(
+    (tab, i) => `
+<div id="tab${i}" style="
+  display: ${i === 0 ? "block" : "none"};
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+">
+<h3 style="margin-top: 0;">${tab.title}</h3>
+${parseContent(tab.content)}
+</div>`
+  )
+  .join("\n")}
+
+<script>
+function openTab(evt, tabId) {
+  var i, tabcontent, buttons;
+  tabcontent = document.querySelectorAll('[id^="tab"]');
+  buttons = document.querySelectorAll('button');
+  tabcontent.forEach(el => el.style.display = "none");
+  buttons.forEach(b => {
+    b.classList.remove('active');
+    b.style.backgroundColor = "inherit";
+  });
+  document.getElementById(tabId).style.display = "block";
+  evt.currentTarget.classList.add('active');
+  evt.currentTarget.style.backgroundColor = "#ccc";
+}
+</script>
+
 </body>
 </html>`
 }
