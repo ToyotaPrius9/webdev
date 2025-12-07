@@ -3,6 +3,29 @@
 html,
 body {
   height: 100%;
+  background-color: #020617;
 }
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4b5563 #020617; 
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617; 
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #4b5563;  
+  border-radius: 9999px;
+  border: 2px solid #020617;  
+}
+
 
 

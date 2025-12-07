@@ -1,0 +1,16 @@
+datasource db {
+  provider = "postgresql"
+  
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model EscapeTime {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  timeSeconds Int
+  studentId   String?
+  route       String?
+}
