@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import { studentInfo } from "@/config";
 type Stage = {
   title: string;
   prompt: string;
@@ -12,6 +12,7 @@ type LeaderboardEntry = {
   id: string;
   timeSeconds: number;
   createdAt: string;
+  studentFirstName?: string | null;
 };
 
 const STAGES: Stage[] = [
@@ -173,6 +174,8 @@ export default function EscapePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           timeSeconds: timeTakenSeconds,
+          studentId: studentInfo.number,           
+          studentFirstName: studentInfo.firstname,
           
         }),
       });
@@ -389,7 +392,7 @@ export default function EscapePage() {
                   Leaderboard
                 </h2>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                  Top 10 fastest escape times.
+                  My 5 fastest escape times.
                 </p>
 
                 {leaderboardLoading && (
@@ -420,7 +423,7 @@ export default function EscapePage() {
                           className="flex flex-col rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-3 py-2"
                         >
                           <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            #{index + 1} :  {entry.timeSeconds} seconds
+                            #{index + 1} · {entry.studentFirstName ?? "Anonymous"} · {entry.timeSeconds} seconds
                           </span>
                           <span className="text-[0.7rem] text-gray-600 dark:text-gray-400">
                             {formatDateTime(entry.createdAt)}

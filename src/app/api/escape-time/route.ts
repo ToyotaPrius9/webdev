@@ -6,8 +6,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { timeSeconds, studentId } = body;
-
+    const { timeSeconds, studentId, studentFirstName } = body;
     if (typeof timeSeconds !== "number" || timeSeconds < 0) {
       return NextResponse.json(
         { error: "Invalid timeSeconds" },
@@ -20,6 +19,7 @@ export async function POST(req: Request) {
         timeSeconds,
         studentId: studentId ?? null,
         route: "/escape",
+        studentFirstName: studentFirstName ?? null,
       },
     });
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 }
 
-// GET: top 10 fastest times
+
 export async function GET() {
   try {
     const records = await prisma.escapeTime.findMany({
@@ -42,7 +42,7 @@ export async function GET() {
         { timeSeconds: "asc" },
         { createdAt: "asc" },
       ],
-      take: 10,
+      take: 5,
     });
 
     return NextResponse.json({ records }, { status: 200 });

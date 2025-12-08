@@ -8,9 +8,10 @@ generator client {
 }
 
 model EscapeTime {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  timeSeconds Int
-  studentId   String?
-  route       String?
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  timeSeconds       Int
+  studentId         String?
+  route             String?
+  studentFirstName  String?
 }
