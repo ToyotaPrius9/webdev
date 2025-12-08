@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { studentInfo } from "@/config";
+import Image from "next/image"; 
+
 type Stage = {
   title: string;
   prompt: string;
@@ -14,6 +16,8 @@ type LeaderboardEntry = {
   createdAt: string;
   studentFirstName?: string | null;
 };
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 const STAGES: Stage[] = [
   {
@@ -81,8 +85,9 @@ export default function EscapePage() {
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  // helper: reset everything back to the "Welcome" state
+  // helper: reset everything back to the intro state
   const resetGameToStart = () => {
     setGameStarted(false);
     setFinished(false);
@@ -91,9 +96,10 @@ export default function EscapePage() {
     setCurrentAnswer("");
     setFeedback(null);
     setShowGiveUpConfirm(false);
+    setSaveStatus("idle");
   };
 
-  // Load leaderboard from API
+  // load leaderboard from API
   async function loadLeaderboard() {
     try {
       setLeaderboardLoading(true);
@@ -117,12 +123,12 @@ export default function EscapePage() {
     }
   }
 
-  // Load leaderboard on initial mount
+  // load leaderboard on initial mount
   useEffect(() => {
     loadLeaderboard();
   }, []);
 
-  // Timer: count UP while the game is running
+  // count up timer
   useEffect(() => {
     if (!gameStarted || finished) return;
 
@@ -137,10 +143,11 @@ export default function EscapePage() {
     setGameStarted(true);
     setFinished(false);
     setCurrentStageIndex(0);
-    setElapsedSeconds(0); // start from 0
+    setElapsedSeconds(0); // start from 0 sec
     setCurrentAnswer("");
     setFeedback(null);
     setShowGiveUpConfirm(false);
+    setSaveStatus("idle");
   };
 
   const handleSubmitAnswer = () => {
@@ -158,6 +165,7 @@ export default function EscapePage() {
       setGameStarted(false);
       setFeedback("Nice! You cleared all stages");
       setShowGiveUpConfirm(false);
+      
     } else {
       setCurrentStageIndex((prev) => prev + 1);
       setCurrentAnswer("");
@@ -166,7 +174,11 @@ export default function EscapePage() {
   };
 
   const handleSaveTime = async () => {
+    // prevent double-save
+    if (saveStatus === "saving" || saveStatus === "saved") return;
+
     const timeTakenSeconds = elapsedSeconds;
+    setSaveStatus("saving");
 
     try {
       const res = await fetch("/api/escape-time", {
@@ -174,29 +186,31 @@ export default function EscapePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           timeSeconds: timeTakenSeconds,
-          studentId: studentInfo.number,           
+          studentId: studentInfo.number,
           studentFirstName: studentInfo.firstname,
-          
         }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         console.error("Save failed:", data);
-        alert("Failed to save time. Please try again.");
+        setSaveStatus("error");
+        // after short delay, allow another attempt
+        setTimeout(() => setSaveStatus("idle"), 3000);
         return;
       }
 
       const data = await res.json();
       console.log("Saved escape time record:", data.record);
 
-      // Refresh leaderboard so this run appears if it's in the top 10
+      // refresh leaderboard
       await loadLeaderboard();
 
-      alert(`Time saved: ${formatTime(timeTakenSeconds)}`);
+      setSaveStatus("saved");
     } catch (err) {
       console.error("Network error saving time:", err);
-      alert("Network error saving time. Please try again.");
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
     }
   };
 
@@ -205,7 +219,7 @@ export default function EscapePage() {
   };
 
   const handleConfirmGiveUp = () => {
-    // User clicked "Yeah..." on the confirmation
+    // "Yeah..." confirmation on chickenout
     resetGameToStart(); // nothing is saved
   };
 
@@ -238,12 +252,12 @@ export default function EscapePage() {
           </div>
         )}
 
-        {/* Main + leaderboard */}
+        {/* main + leaderboard */}
         <div className="relative z-10 max-w-4xl w-full px-4 py-8">
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
-            {/* Left: main card */}
+            {/* left: main card */}
             <div className="flex-1">
-              {/* Intro screen */}
+              {/* itro screen */}
               {!gameStarted && !finished && (
                 <div className="text-center md:text-left bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl px-6 py-10">
                   <h1 className="text-3xl md:text-4xl font-extrabold mb-6 text-gray-900 dark:text-white">
@@ -253,13 +267,21 @@ export default function EscapePage() {
                     We&apos;ll track how long you take to solve three JS
                     challenges. Can you really escape this? Run as fast as you can!
                   </p>
-                  <button
-                    onClick={handleEnter}
-                    className="mt-2 inline-flex items-center justify-center px-8 py-3 rounded-md text-lg font-semibold 
-                               bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors"
-                  >
-                    Enter
-                  </button>
+                    <button
+                      onClick={handleEnter}
+                      className="mt-2 inline-flex items-center justify-center px-5 py-2.5 rounded-md text-lg font-semibold 
+                                bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors gap-2"
+                    >
+                      <Image
+                        src="/enter.svg"
+                        alt="Enter button icon"
+                        width={20}
+                        height={20}
+                        className="w-5 h-5 -ml-1"  // slight left pull for better centering
+                      />
+                      Enter
+                    </button>
+
                 </div>
               )}
 
@@ -301,7 +323,7 @@ export default function EscapePage() {
                     </p>
                   )}
 
-                  {/* Actions: Chicken out (left) + Submit (right) */}
+                  {/* chicken out + submit */}
                   <div className="flex justify-between items-center mt-4">
                     <button
                       type="button"
@@ -375,24 +397,47 @@ export default function EscapePage() {
                     </button>
                     <button
                       onClick={handleSaveTime}
-                      className="inline-flex items-center justify-center px-8 py-3 rounded-md text-sm md:text-base font-semibold 
-                                 bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors"
+                      disabled={saveStatus === "saving" || saveStatus === "saved"}
+                      className={`inline-flex items-center justify-center px-8 py-3 rounded-md text-sm md:text-base font-semibold shadow-lg transition-colors
+                        ${
+                          saveStatus === "saved"
+                            ? "bg-gray-500 hover:bg-gray-500 cursor-default text-white"
+                            : "bg-green-500 hover:bg-green-600 text-white"
+                        }
+                        ${
+                          saveStatus === "saving" ? "opacity-80 cursor-wait" : ""
+                        }
+                      `}
                     >
-                      Save Time
+                      {saveStatus === "saving"
+                        ? "Saving..."
+                        : saveStatus === "saved"
+                        ? "Saved!"
+                        : saveStatus === "error"
+                        ? "Save failed.."
+                        : "Save Time"}
                     </button>
                   </div>
                 </div>
               )}
             </div>
 
-            
+            {/* leaderboarrd*/}
             {!gameStarted && (
               <div className="md:w-72 bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl px-4 py-6">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Leaderboard
-                </h2>
+                <div className="flex items-center gap-2 mb-2">
+                  <img
+                    src="/trophy.svg"
+                    alt="Trophy"
+                    className="w-5 h-5"
+                  />
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Leaderboard
+                  </h2>
+                </div>
+
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                  My 5 fastest escape times.
+                  Top 5 fastest escape times.
                 </p>
 
                 {leaderboardLoading && (
@@ -423,7 +468,8 @@ export default function EscapePage() {
                           className="flex flex-col rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-3 py-2"
                         >
                           <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            #{index + 1} · {entry.studentFirstName ?? "Anonymous"} · {entry.timeSeconds} seconds
+                            #{index + 1} · {entry.studentFirstName ?? "Anonymous"} ·{" "}
+                            {entry.timeSeconds} seconds
                           </span>
                           <span className="text-[0.7rem] text-gray-600 dark:text-gray-400">
                             {formatDateTime(entry.createdAt)}

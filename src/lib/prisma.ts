@@ -1,4 +1,3 @@
-// src/lib/prisma.ts
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pkg from "pg";
@@ -7,7 +6,7 @@ const { Pool } = pkg;
 
 const globalForPrisma = global as unknown as { prisma?: PrismaClient };
 
-// Use the same DATABASE_URL you already have in .env
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });

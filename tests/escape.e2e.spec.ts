@@ -1,4 +1,3 @@
-// tests/escape.e2e.spec.ts
 import { test, expect } from "@playwright/test";
 
 test.describe("Escape Room", () => {

@@ -6,7 +6,7 @@ import { ReactNode } from "react";
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider
-      attribute="class"   // adds "class" to <html> (so Tailwind's dark mode works)
+      attribute="class"   // class strategy
       defaultTheme="system" // fallback theme
       enableSystem        // respect system preference
       disableTransitionOnChange // prevents flicker when switching themes
