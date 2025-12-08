@@ -14,13 +14,14 @@
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "@supabase/supabase-js": "^2.86.2",
+    "eslint-config-next": "^16.0.7",
     "js-cookie": "^3.0.5",
-    "next": "15.5.3",
+    "next": "^16.0.7",
     "next-themes": "^0.4.6",
     "pg": "^8.16.3",
     "prisma": "^7.1.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

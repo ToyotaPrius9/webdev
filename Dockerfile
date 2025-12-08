@@ -6,8 +6,12 @@ RUN apk add --no-cache openssl
 
 COPY package.json package-lock.json ./
 
-# Install all dependencies 
-RUN npm ci
+
+COPY prisma ./prisma
+COPY prisma.config.ts ./
+
+
+RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npm ci
 
 # -------- Builder image --------
 FROM node:20-alpine AS builder
@@ -19,7 +23,8 @@ COPY --from=deps /app/node_modules ./node_modules
 
 COPY . .
 
-# Dummy URL to bypass Prisma validation during build
+
+
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
 # Build Next.js app
@@ -43,7 +48,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/src ./src
 
-
+# Copy config files
 COPY --from=builder /app/next.config.* ./
 COPY --from=builder /app/tsconfig.* ./
 
