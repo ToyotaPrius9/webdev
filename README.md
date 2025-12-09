@@ -148,7 +148,8 @@ To stop the application:
 <img width="1919" height="983" alt="image" src="https://github.com/user-attachments/assets/e115aced-ed85-48a8-ab59-dbb74e252f08" />
 <br>
 <br>
-<img width="561" height="485" alt="image" src="https://github.com/user-attachments/assets/deecb9ae-b017-4408-86aa-da3eacf3baa7" />
+<img width="460" height="608" alt="image" src="https://github.com/user-attachments/assets/b5a530a4-bb5b-401c-bea5-d979acfbc7e2" />
+
 
 
 
