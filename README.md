@@ -128,26 +128,26 @@ To stop the application:
 ## Some Screenshots of the Application
 
 <img width="1919" height="876" alt="image" src="https://github.com/user-attachments/assets/065081ab-806a-47a3-bfc9-34856d2440fe" />
-
-
+<br>
+<br>
 <img width="1919" height="875" alt="image" src="https://github.com/user-attachments/assets/89039433-364d-44aa-8fd6-b17767aa1bee" />
-
-
+<br>
+<br>
 <img width="1919" height="878" alt="image" src="https://github.com/user-attachments/assets/b09a36fe-cb31-45e1-aa00-6d4af4a8a03c" />
-
-
+<br>
+<br>
 <img width="1919" height="877" alt="image" src="https://github.com/user-attachments/assets/40d73bd3-95ef-4db5-91d8-dea09bf54cb1" />
-
-
+<br>
+<br>
 <img width="1919" height="880" alt="image" src="https://github.com/user-attachments/assets/493aeccc-3df8-470a-9e18-0682eab9e645" />
-
-
+<br>
+<br>
 <img width="1919" height="878" alt="image" src="https://github.com/user-attachments/assets/ccd7feb6-bf94-4086-9020-672c6d5107e2" />
-
-
+<br>
+<br>
 <img width="1919" height="983" alt="image" src="https://github.com/user-attachments/assets/e115aced-ed85-48a8-ab59-dbb74e252f08" />
-
-
+<br>
+<br>
 <img width="561" height="485" alt="image" src="https://github.com/user-attachments/assets/deecb9ae-b017-4408-86aa-da3eacf3baa7" />
 
 
