@@ -87,12 +87,14 @@ test("user can chicken out and return to start without saving", async () => {
   ).toBeInTheDocument();
 
   // save-time API must NOT have been called
-  expect(global.fetch).toHaveBeenCalledTimes(1); // only initial GET leaderboard
+  // 1 call = initial GET /api/escape-time for leaderboard
+  expect(global.fetch).toHaveBeenCalledTimes(1);
 });
 
 test("saving time calls POST /api/escape-time", async () => {
   jest.useFakeTimers();
 
+  // first call: initial leaderboard GET
   (global.fetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
     json: async () => ({ records: [] }),
@@ -108,7 +110,6 @@ test("saving time calls POST /api/escape-time", async () => {
     jest.advanceTimersByTime(3000);
   });
 
-  // answer all stages correctly, quickly
   const textarea = await screen.findByPlaceholderText(
     /Type your JavaScript code here/i
   );
@@ -138,7 +139,7 @@ test("saving time calls POST /api/escape-time", async () => {
     await screen.findByText(/Congratulations!/i)
   ).toBeInTheDocument();
 
-  // mock fetch for POST (leaderboard GET will be the second call)
+  // Next two fetches: POST save + GET leaderboard
   (global.fetch as jest.Mock).mockResolvedValueOnce({
     ok: true,
     json: async () => ({ success: true, record: {} }),
