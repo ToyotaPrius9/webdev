@@ -27,16 +27,16 @@ The design of the application was made with simplicity in mind, making it easier
   - A video tutorial on how to use the web application
 
  - **Escape Room**
-   This is an escape room challenge for students or leaners to enhance their JS knowledge.
-   It consists of multiple stages with a timer to record their completion time, along with a leaderboard showing the top
-   5 quickest times of users, wherein if owned, user can edit notes or delete the record. 
-  Includes:
-  - Escape room intro with start button
-  - Multiple stages consisting of JS challenges
-  - Feature to give up and quit the escape room
-  - A completion stage wherein users are able to save their time to the database and go back to the home screen
-  - Leaderboards showing top 5 quickest achieved times, with edit note and delete record button (if record owned by user)
- 
+     This is an escape room challenge for students or leaners to enhance their JS knowledge.
+     It consists of multiple stages with a timer to record their completion time, along with a leaderboard showing the top
+     5 quickest times of users, wherein if owned, user can edit notes or delete the record. 
+    Includes:
+    - Escape room intro with start button
+    - Multiple stages consisting of JS challenges
+    - Feature to give up and quit the escape room
+    - A completion stage wherein users are able to save their time to the database and go back to the home screen
+    - Leaderboards showing top 5 quickest achieved times, with edit note and delete record button (if record owned by user)
+   
 
 
 
