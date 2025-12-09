@@ -25,9 +25,7 @@ test.describe("Escape Room", () => {
     await page.getByRole("button", { name: /enter/i }).click();
 
     // stage 1
-    await expect(
-      page.getByText(/Stage 1: Hello, World!/i)
-    ).toBeVisible();
+    await expect(page.getByText(/Stage 1: Hello, World!/i)).toBeVisible();
 
     // leaderboard disappears when playing
     await expect(page.getByText(/Leaderboard/i)).toHaveCount(0);
@@ -88,26 +86,20 @@ test.describe("Escape Room", () => {
     );
     await page.getByRole("button", { name: /submit answer/i }).click();
 
-    // finis screen
-    await expect(
-      page.getByText(/Congratulations!/i)
-    ).toBeVisible();
+    // finish screen
+    await expect(page.getByText(/Congratulations!/i)).toBeVisible();
     await expect(
       page.getByText(/You successfully escaped/i)
     ).toBeVisible();
 
-    // handle browser alert ("Time saved: ...")
-    page.once("dialog", async (dialog) => {
-      await dialog.accept();
-    });
-
-    // wait for POST /api/escape-time 
+    // wait for POST /api/escape-time
     const saveButton = page.getByRole("button", { name: /save time/i });
 
     const [response] = await Promise.all([
-      page.waitForResponse((res) =>
-        res.url().includes("/api/escape-time") &&
-        res.request().method() === "POST"
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/escape-time") &&
+          res.request().method() === "POST"
       ),
       saveButton.click(),
     ]);
@@ -118,10 +110,105 @@ test.describe("Escape Room", () => {
     const backButton = page.getByRole("button", { name: /back to start/i });
     await backButton.click();
 
-    // back to welcome 
+    // back to welcome
     await expect(
       page.getByRole("heading", { name: /welcome to the escape room/i })
     ).toBeVisible();
     await expect(page.getByText(/Leaderboard/i)).toBeVisible();
+  });
+
+  test("user can edit note on top run and delete the last run", async ({
+    page,
+  }) => {
+    await page.goto("/escape");
+
+    // wait for leaderboard to load
+    const leaderboardList = page.locator("ol");
+    let items = leaderboardList.locator("li");
+
+    // If there are no runs yet, create one via the normal flow
+    if ((await items.count()) === 0) {
+      await page.getByRole("button", { name: /enter/i }).click();
+
+      const textarea = page.getByPlaceholder(
+        "Type your JavaScript code here..."
+      );
+
+      // Stage 1
+      await textarea.fill('console.log("Hello world");');
+      await page.getByRole("button", { name: /submit answer/i }).click();
+
+      // Stage 2
+      await textarea.fill('alert("Welcome to the escape room!");');
+      await page.getByRole("button", { name: /submit answer/i }).click();
+
+      // Stage 3
+      await textarea.fill(
+        "function add(a, b) { return a + b; } add(3, 4);"
+      );
+      await page.getByRole("button", { name: /submit answer/i }).click();
+
+      const saveButton = page.getByRole("button", { name: /save time/i });
+
+      const [saveResponse] = await Promise.all([
+        page.waitForResponse(
+          (res) =>
+            res.url().includes("/api/escape-time") &&
+            res.request().method() === "POST"
+        ),
+        saveButton.click(),
+      ]);
+
+      await expect(saveResponse.ok()).toBeTruthy();
+
+      // go back to start so leaderboard is visible again
+      await page.getByRole("button", { name: /back to start/i }).click();
+    }
+
+    // refresh locators after potential navigation
+    items = leaderboardList.locator("li");
+    await expect(items.first()).toBeVisible();
+
+    // --- Edit note on the top run ---
+    const topItem = items.first();
+
+    // click edit icon (uses aria-label="Edit note")
+    await topItem.getByRole("button", { name: /edit note/i }).click();
+
+    const noteInput = topItem.getByPlaceholder(
+      "Add a note for this run..."
+    );
+    const newNote = "This note was from a Playright bot! Fear my 0 Second record!";
+
+    await noteInput.fill(newNote);
+
+    await topItem.getByRole("button", { name: /^save$/i }).click();
+
+    // verify note text is rendered
+    await expect(
+      topItem.getByText(new RegExp(`Note: ${newNote}`))
+    ).toBeVisible();
+
+    // --- Delete the last run ---
+    const initialCount = await items.count();
+    const lastItem = items.last();
+
+    const deleteButton = lastItem.getByRole("button", {
+      name: /delete record/i,
+    });
+
+    const [deleteResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) =>
+          res.url().includes("/api/escape-time/") &&
+          res.request().method() === "DELETE"
+      ),
+      deleteButton.click(),
+    ]);
+
+    await expect(deleteResponse.ok()).toBeTruthy();
+
+    // one less item after deletion
+    await expect(items).toHaveCount(initialCount - 1);
   });
 });

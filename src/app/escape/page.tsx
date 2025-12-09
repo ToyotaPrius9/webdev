@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { studentInfo } from "@/config";
-import Image from "next/image"; 
+import Image from "next/image";
 
 type Stage = {
   title: string;
@@ -15,6 +15,8 @@ type LeaderboardEntry = {
   timeSeconds: number;
   createdAt: string;
   studentFirstName?: string | null;
+  studentId?: string | null;
+  note?: string | null;
 };
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -22,8 +24,7 @@ type SaveStatus = "idle" | "saving" | "saved" | "error";
 const STAGES: Stage[] = [
   {
     title: "Stage 1: Hello, World!",
-    prompt:
-      'Write JavaScript code that prints "Hello world" to the console.',
+    prompt: 'Write JavaScript code that prints "Hello world" to the console.',
     hint: `Use console.log("Hello world");`,
   },
   {
@@ -87,7 +88,13 @@ export default function EscapePage() {
   const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
-  // helper: reset everything back to the intro state
+  // note edit/delete UI state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState("");
+  const [noteSavingId, setNoteSavingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // reset everything back to the intro state
   const resetGameToStart = () => {
     setGameStarted(false);
     setFinished(false);
@@ -165,7 +172,6 @@ export default function EscapePage() {
       setGameStarted(false);
       setFeedback("Nice! You cleared all stages");
       setShowGiveUpConfirm(false);
-      
     } else {
       setCurrentStageIndex((prev) => prev + 1);
       setCurrentAnswer("");
@@ -195,7 +201,6 @@ export default function EscapePage() {
         const data = await res.json().catch(() => ({}));
         console.error("Save failed:", data);
         setSaveStatus("error");
-        // after short delay, allow another attempt
         setTimeout(() => setSaveStatus("idle"), 3000);
         return;
       }
@@ -203,9 +208,7 @@ export default function EscapePage() {
       const data = await res.json();
       console.log("Saved escape time record:", data.record);
 
-      // refresh leaderboard
       await loadLeaderboard();
-
       setSaveStatus("saved");
     } catch (err) {
       console.error("Network error saving time:", err);
@@ -223,11 +226,93 @@ export default function EscapePage() {
     resetGameToStart(); // nothing is saved
   };
 
+  // --- Note editing handlers ---
+
+  const startEditNote = (entry: LeaderboardEntry) => {
+    // only allow editing "my" scores (same studentId)
+    if (entry.studentId && entry.studentId !== studentInfo.number) return;
+    setEditingId(entry.id);
+    setEditingNote(entry.note ?? "");
+  };
+
+  const cancelEditNote = () => {
+    setEditingId(null);
+    setEditingNote("");
+    setNoteSavingId(null);
+  };
+
+  const handleSaveNote = async () => {
+    if (!editingId) return;
+
+    const trimmed = editingNote.trim();
+    setNoteSavingId(editingId);
+
+    try {
+      const res = await fetch(`/api/escape-time/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          note: trimmed.length > 0 ? trimmed : null,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Failed to update note");
+        setNoteSavingId(null);
+        return;
+      }
+
+      const data = await res.json();
+
+      setLeaderboard((prev) =>
+        prev.map((entry) =>
+          entry.id === data.record.id ? data.record : entry
+        )
+      );
+
+      cancelEditNote();
+    } catch (error) {
+      console.error("Error updating note:", error);
+      setNoteSavingId(null);
+    }
+  };
+
+  // --- Delete handler ---
+
+  const handleDeleteEntry = async (entry: LeaderboardEntry) => {
+    // only allow deleting "my" scores
+    if (entry.studentId && entry.studentId !== studentInfo.number) return;
+
+    setDeletingId(entry.id);
+
+    try {
+      const res = await fetch(`/api/escape-time/${entry.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        console.error("Failed to delete record");
+        setDeletingId(null);
+        return;
+      }
+
+      setLeaderboard((prev) => prev.filter((e) => e.id !== entry.id));
+
+      if (editingId === entry.id) {
+        cancelEditNote();
+      }
+
+      setDeletingId(null);
+    } catch (error) {
+      console.error("Error deleting record:", error);
+      setDeletingId(null);
+    }
+  };
+
   const timeTaken = elapsedSeconds;
   const currentStage = STAGES[currentStageIndex];
 
   return (
-    // wrapper that cancels main's padding so bg fills the whole area
     <div className="-mx-4 md:-mx-6 lg:-mx-8 -my-6">
       <div
         className="relative min-h-[70vh] md:min-h-[calc(103vh-160px)] flex items-center justify-center"
@@ -257,7 +342,7 @@ export default function EscapePage() {
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
             {/* left: main card */}
             <div className="flex-1">
-              {/* itro screen */}
+              {/* intro screen */}
               {!gameStarted && !finished && (
                 <div className="text-center md:text-left bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl px-6 py-10">
                   <h1 className="text-3xl md:text-4xl font-extrabold mb-6 text-gray-900 dark:text-white">
@@ -265,23 +350,23 @@ export default function EscapePage() {
                   </h1>
                   <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 mb-6">
                     We&apos;ll track how long you take to solve three JS
-                    challenges. Can you really escape this? Run as fast as you can!
+                    challenges. Can you really escape this? Run as fast as you
+                    can!
                   </p>
-                    <button
-                      onClick={handleEnter}
-                      className="mt-2 inline-flex items-center justify-center px-5 py-2.5 rounded-md text-lg font-semibold 
+                  <button
+                    onClick={handleEnter}
+                    className="mt-2 inline-flex items-center justify-center px-5 py-2.5 rounded-md text-lg font-semibold 
                                 bg-green-500 hover:bg-green-600 text-white shadow-lg transition-colors gap-2"
-                    >
-                      <Image
-                        src="/enter.svg"
-                        alt="Enter button icon"
-                        width={20}
-                        height={20}
-                        className="w-5 h-5 -ml-1"  // slight left pull for better centering
-                      />
-                      Enter
-                    </button>
-
+                  >
+                    <Image
+                      src="/enter.svg"
+                      alt="Enter button icon"
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 -ml-1"
+                    />
+                    Enter
+                  </button>
                 </div>
               )}
 
@@ -397,7 +482,9 @@ export default function EscapePage() {
                     </button>
                     <button
                       onClick={handleSaveTime}
-                      disabled={saveStatus === "saving" || saveStatus === "saved"}
+                      disabled={
+                        saveStatus === "saving" || saveStatus === "saved"
+                      }
                       className={`inline-flex items-center justify-center px-8 py-3 rounded-md text-sm md:text-base font-semibold shadow-lg transition-colors
                         ${
                           saveStatus === "saved"
@@ -422,15 +509,11 @@ export default function EscapePage() {
               )}
             </div>
 
-            {/* leaderboarrd*/}
+            {/* leaderboard */}
             {!gameStarted && (
               <div className="md:w-72 bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-xl px-4 py-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <img
-                    src="/trophy.svg"
-                    alt="Trophy"
-                    className="w-5 h-5"
-                  />
+                  <img src="/trophy.svg" alt="Trophy" className="w-5 h-5" />
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Leaderboard
                   </h2>
@@ -462,20 +545,119 @@ export default function EscapePage() {
                   !leaderboardError &&
                   leaderboard.length > 0 && (
                     <ol className="mt-2 space-y-2 text-xs">
-                      {leaderboard.map((entry, index) => (
-                        <li
-                          key={entry.id}
-                          className="flex flex-col rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-3 py-2"
-                        >
-                          <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            #{index + 1} · {entry.studentFirstName ?? "Anonymous"} ·{" "}
-                            {entry.timeSeconds} seconds
-                          </span>
-                          <span className="text-[0.7rem] text-gray-600 dark:text-gray-400">
-                            {formatDateTime(entry.createdAt)}
-                          </span>
-                        </li>
-                      ))}
+                      {leaderboard.map((entry, index) => {
+                        const isMine =
+                          entry.studentId === studentInfo.number ||
+                          !entry.studentId; // fallback if null in DB
+
+                        const isEditing = editingId === entry.id;
+                        const isSavingThisNote = noteSavingId === entry.id;
+                        const isDeletingThis = deletingId === entry.id;
+
+                        return (
+                          <li
+                            key={entry.id}
+                            className="flex flex-col rounded-md bg-gray-100/80 dark:bg-gray-800/80 px-3 py-2"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                  #{index + 1} ·{" "}
+                                  {entry.studentFirstName ?? "Anonymous"} ·{" "}
+                                  {entry.timeSeconds} seconds
+                                </span>
+                                {entry.note && (
+                                  <div className="mt-0.5 text-[0.7rem] text-gray-700 dark:text-gray-300">
+                                    Note: {entry.note}
+                                  </div>
+                                )}
+                                <span className="block text-[0.7rem] text-gray-600 dark:text-gray-400 mt-0.5">
+                                  {formatDateTime(entry.createdAt)}
+                                </span>
+                                
+                              </div>
+
+                              {/* edit/delete icons */}
+                                {isMine && (
+                                  <div className="flex items-center gap-2 text-base">
+                                    <button
+                                      type="button"
+                                      onClick={() => startEditNote(entry)}
+                                      disabled={isDeletingThis}
+                                      className={`leading-none ${
+                                        isDeletingThis ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+                                      }`}
+                                      aria-label="Edit note"
+                                    >
+                                      <Image
+                                        src="/edit.svg"
+                                        alt="Edit note"
+                                        width={16}
+                                        height={16}
+                                        className="w-4 h-4"
+                                      />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteEntry(entry)}
+                                      disabled={isDeletingThis}
+                                      className={`leading-none ${
+                                        isDeletingThis ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
+                                      }`}
+                                      aria-label="Delete record"
+                                    >
+                                      <Image
+                                        src="/delete.svg"
+                                        alt="Delete record"
+                                        width={16}
+                                        height={16}
+                                        className="w-4 h-4"
+                                      />
+                                    </button>
+                                  </div>
+                                )}
+
+
+                            </div>
+
+                            {/* note editor */}
+                            {isEditing && (
+                              <div className="mt-2 flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={editingNote}
+                                  onChange={(e) =>
+                                    setEditingNote(e.target.value)
+                                  }
+                                  className="flex-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-[0.7rem] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-green-500"
+                                  placeholder="Add a note for this run..."
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleSaveNote}
+                                  disabled={isSavingThisNote}
+                                  className={`px-2 py-1 rounded text-[0.7rem] font-semibold ${
+                                    isSavingThisNote
+                                      ? "bg-green-400 text-white cursor-wait"
+                                      : "bg-green-500 hover:bg-green-600 text-white"
+                                  }`}
+                                >
+                                  {isSavingThisNote ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={cancelEditNote}
+                                  disabled={isSavingThisNote}
+                                  className="px-2 py-1 rounded text-[0.7rem] font-semibold bg-gray-300 hover:bg-gray-400 text-gray-800"
+                                >
+                                  X
+                                </button>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ol>
                   )}
               </div>

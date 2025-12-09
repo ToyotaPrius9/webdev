@@ -20,11 +20,11 @@ jest.mock("@/lib/prisma", () => ({
   },
 }));
 
-// 3. Now require prisma + route (after mocks are in place)
+// 3. require prisma + route 
 const { prisma } = require("@/lib/prisma");
 const { POST, GET } = require("@/app/api/escape-time/route");
 
-// Helper: minimal "Request" object with just json()
+// Helper: minimal "Request" object
 function makeMockRequest(body: any) {
   return {
     json: async () => body,
