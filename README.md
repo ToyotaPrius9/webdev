@@ -123,6 +123,8 @@ To stop the application:
    ```bash
    docker compose down
 
+
+---
 ## Some Screenshots of the Application
 
 <img width="1919" height="876" alt="image" src="https://github.com/user-attachments/assets/065081ab-806a-47a3-bfc9-34856d2440fe" />
