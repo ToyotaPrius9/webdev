@@ -86,7 +86,7 @@ test("user can chicken out and return to start without saving", async () => {
     await screen.findByText(/Welcome to the escape room/i)
   ).toBeInTheDocument();
 
-  // save-time API must NOT have been called
+  
   // 1 call = initial GET /api/escape-time for leaderboard
   expect(global.fetch).toHaveBeenCalledTimes(1);
 });

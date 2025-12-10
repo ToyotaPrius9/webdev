@@ -44,7 +44,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const { id } = await context.params; // 👈 unwrap the Promise
+  const { id } = await context.params; 
 
   if (!id) {
     return NextResponse.json(
