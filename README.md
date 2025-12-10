@@ -158,6 +158,11 @@ To stop the application:
 <br>
 <img width="1919" height="997" alt="image" src="https://github.com/user-attachments/assets/3b5b4595-6760-4984-aab4-eaa91f44a574" />
 
+---
+
+## Discussions and User Feedback
+
+The feedback was collected in a verbal format, found in the late section of the mp4 video inside of public, or at: https://drive.google.com/file/d/13-t75MADuZsyulfGOygW22AU1d2ZSw1v/view?usp=sharing. Overall, feedback of the application was positive, and mentioned an easy to use user-friendly UI. But, there was a critisism from a user that stated that the loading times for the leaderboard entries could be better in terms of speed. Safe to say that they were satisfied of the web application.
 
 
 
