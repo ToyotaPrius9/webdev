@@ -5,6 +5,11 @@ This application includes front-end designs, interactive UI components, and them
 
 ---
 
+## Cloud-Deployed Live Link
+
+https://webdev-harmans-projects-54a88e86.vercel.app/escape
+
+---
 ## Overview
 
 This web application provides a tabs page, which allows users to generate clean HTML5 code with JS and inline CSS, all with no use of external stylesheets or CSS classes.  
@@ -149,6 +154,11 @@ To stop the application:
 <br>
 <br>
 <img width="460" height="608" alt="image" src="https://github.com/user-attachments/assets/b5a530a4-bb5b-401c-bea5-d979acfbc7e2" />
+<br>
+<br>
+<img width="1919" height="997" alt="image" src="https://github.com/user-attachments/assets/3b5b4595-6760-4984-aab4-eaa91f44a574" />
+
+
 
 
 
